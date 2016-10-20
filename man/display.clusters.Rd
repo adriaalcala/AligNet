@@ -23,7 +23,8 @@ display.clusters(clust, Net, zoom = NA, type = 1, cols = c("yellow",
 \item{...}{Additional plotting parameters}
 }
 \description{
-Given a cluster matrix, see \code{cluster.network} and a network
+Graphical representation of the network clusters.
+Given a cluster matrix, see \code{cluster.network}, and a network
 display the cluster matrix with the following colors for the position (i,j):
 }
 \details{
@@ -38,5 +39,9 @@ proteins interact in the network
 
 -  Green if the protein and protein i belongs to cluster of protein j and
 proteins interact in the network
+
+This function has a \code{zoom} option, to reduce the number of squares that are drawn.
+In this case the user has to select one of the colors, and the color will represent the
+average of the values of the matrix in that square.
 }
 

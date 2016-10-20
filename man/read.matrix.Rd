@@ -7,7 +7,7 @@
 read.matrix(fileName, mode = "table", sym = "TRUE", def = 0)
 }
 \arguments{
-\item{fileName}{directory of the matrix or data.frame (for mode col3)}
+\item{fileName}{directory of the matrix or data.frame.}
 
 \item{mode}{table, col3, RData}
 
@@ -21,6 +21,17 @@ In mode in 3col the value of M[i,j] will be the last that appears in the file}
 matrix
 }
 \description{
-Read a matrix in several formats
+Useful function to read a matrix from a file. This function accepts several formats:
+}
+\details{
+- \code{table}. The matrix is in table format in the file, i.e. in the row of the matrix is
+in the row i of the file.
+- \code{col3}. Each row of the file has 3 values corresponding to position (row, column) and value.
+- \code{RData}. The file is an R object.
+
+This function also accept the parameter \code{sym}, to build a symmetric matrix and the
+parameter \code{def} to set the default value of the matrix for the format \code{col3}.
+
+This function can be used to transform a \code{data.frame} to matrix.
 }
 

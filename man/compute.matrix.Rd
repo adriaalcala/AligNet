@@ -10,24 +10,23 @@ compute.matrix(net1, net2 = NULL, type = "Distance", mode = "Similarity",
 \arguments{
 \item{net1}{an igraph object}
 
-\item{net2}{an igraph object for modes \code{BLAST} and \code{FC} if Net2
+\item{net2}{an igraph object for \code{FC} \code{Degree} if Net2
 is not NULL, computes the matrix between nodes in Net1 and Net2.}
 
-\item{type}{what matrice do you want to compute (BLAST, DSD, Distance,
+\item{type}{what matrice do you want to compute (Distance,
 FC, Degree)}
 
-\item{mode}{for type \code{BLAST} : pident or bitscore.
-For \code{DSD} and \code{Distance} distance, similarity or similarity by
+\item{mode}{for \code{Distance} distance, similarity or similarity by
 components.
 For \code{FC} the list of ontologies}
 
-\item{database}{for \code{BLAST} and \code{FC} the database which
+\item{database}{for \code{FC} the database which
 proteins belongs.}
 
-\item{database2}{for \code{BLAST} and \code{FC} the database which
+\item{database2}{for \code{FC} the database which
 proteins belongs.}
 
-\item{byComp}{for \code{DSD} and \code{Distance} if the similarity or
+\item{byComp}{for \code{Distance} if the similarity or
 distance must be normalized by components}
 
 \item{normalized}{if the matrix will be normalized}
@@ -36,6 +35,25 @@ distance must be normalized by components}
 The matrix
 }
 \description{
-Compute several matrices
+Function to compute several useful matrices related to protein protein interaction
+networks.
+The matrices that this function can compute are:
+- \code{Distance}: A similarity or disimilarity matrix, based on the distance of the nodes
+in the graph, i.e, two nodes will be more similars if they are nearby in the network.
+- \code{FC}: A similarity or disimilarity matrix, based on a ontology. This matrix is
+commonly used with the Gene Ontology, i. e., two nodes will be more similars if they
+share more functions.
+- \code{Degree}: A similarity or disimilarity matrix, based on the degrees of the nodes.
+Two nodes will be more similars if they has similar degrees.
+}
+\details{
+For the formats \code{FC} and \code{Degree} the input can be one network or two.
+}
+\note{
+In a future work we will include the types BLAST and DSD, to compute BLAST similarity
+matrix and DSD similarity matrix.
+}
+\references{
+Article AligNet
 }
 

@@ -1,10 +1,17 @@
-
-
-
 #'Read Matrix
 #'
-#'Read a matrix in several formats
-#'@param fileName directory of the matrix or data.frame (for mode col3)
+#' Useful function to read a matrix from a file. This function accepts several formats:
+#'
+#'- \code{table}. The matrix is in table format in the file, i.e. in the row of the matrix is
+#'in the row i of the file.
+#'- \code{col3}. Each row of the file has 3 values corresponding to position (row, column) and value.
+#'- \code{RData}. The file is an R object.
+#'
+#'This function also accept the parameter \code{sym}, to build a symmetric matrix and the
+#'parameter \code{def} to set the default value of the matrix for the format \code{col3}.
+#'
+#'This function can be used to transform a \code{data.frame} to matrix.
+#'@param fileName directory of the matrix or data.frame.
 #'@param mode table, col3, RData
 #'@param sym True if the matrix must be symmetric.In modes table and RData,
 #'if the matrix is not symmetric the value of M[i,j] will be (M[i,j]+M[j,i])/2.
@@ -59,7 +66,14 @@ read.matrix.col3 <- function(fileName,def = 0) {
 
 #'Read Network
 #'
-#'Read network from a file
+#'Function to read a graph from a file or a \code{date.frame}. Accepts two kinds of formats:
+#'- \code{tab} : A file that comes from DIP or BioGRID in tab or mitab format.
+#'- \code{edges}: Each row of the file or \code{data.frame} is an edge. The edges can have
+#'attributes.
+#'
+#'In \code{tab} format, you can indicate wheter you wish to preserves interaction type as
+#'attribute.
+#'In \code{edges} format, you can choose wich columns are the attributes of the edge.
 #'@param fileName directory of network or a data.frame
 #'@param mode tab : a file from DIP or BIOGRID of type tab or mitab;
 #'edges: a list of edges with attributes (not necessary)
@@ -233,33 +247,46 @@ read.network.edges <- function(fileName,cols,sep) {
 
 #' Compute Matrix
 #'
-#' Compute several matrices
+#' Function to compute several useful matrices related to protein protein interaction
+#' networks.
+#' The matrices that this function can compute are:
+#' - \code{Distance}: A similarity or disimilarity matrix, based on the distance of the nodes
+#' in the graph, i.e, two nodes will be more similars if they are nearby in the network.
+#' - \code{FC}: A similarity or disimilarity matrix, based on a ontology. This matrix is
+#' commonly used with the Gene Ontology, i. e., two nodes will be more similars if they
+#' share more functions.
+#' - \code{Degree}: A similarity or disimilarity matrix, based on the degrees of the nodes.
+#' Two nodes will be more similars if they has similar degrees.
+#'
+#' For the formats \code{FC} and \code{Degree} the input can be one network or two.
 #' @param net1 an igraph object
-#' @param net2 an igraph object for modes \code{BLAST} and \code{FC} if Net2
+#' @param net2 an igraph object for \code{FC} \code{Degree} if Net2
 #' is not NULL, computes the matrix between nodes in Net1 and Net2.
-#' @param type what matrice do you want to compute (BLAST, DSD, Distance,
+#' @param type what matrice do you want to compute (Distance,
 #' FC, Degree)
-#' @param mode for type \code{BLAST} : pident or bitscore.
-#' For \code{DSD} and \code{Distance} distance, similarity or similarity by
+#' @param mode for \code{Distance} distance, similarity or similarity by
 #' components.
 #' For \code{FC} the list of ontologies
-#' @param byComp for \code{DSD} and \code{Distance} if the similarity or
+#' @param byComp for \code{Distance} if the similarity or
 #' distance must be normalized by components
-#' @param database for \code{BLAST} and \code{FC} the database which
+#' @param database for \code{FC} the database which
 #' proteins belongs.
-#' @param database2 for \code{BLAST} and \code{FC} the database which
+#' @param database2 for \code{FC} the database which
 #' proteins belongs.
 #' @param normalized if the matrix will be normalized
 #' @return The matrix
+#' @note In a future work we will include the types BLAST and DSD, to compute BLAST similarity
+#' matrix and DSD similarity matrix.
+#' @references Article AligNet
 compute.matrix <- function(net1,net2 = NULL, type = "Distance", mode = "Similarity",
                           database = NULL, database2 = NULL, byComp = TRUE,
                           normalized = TRUE) {
   switch(
     type,
-    BLAST = return(
-      compute.matrix.Blast(net1,net2,mode,database,database2,normalized)
-    ),
-    DSD = return(compute.matrix.DSD(net1,mode,byComp,normalized)),
+#    BLAST = return(
+#      compute.matrix.Blast(net1,net2,mode,database,database2,normalized)
+#    ),
+#    DSD = return(compute.matrix.DSD(net1,mode,byComp,normalized)),
     Distance = return(compute.matrix.Distance(net1,mode,byComp,normalized)),
     FC = return(compute.matrix.FC(net1,net2,mode)),
     Degree = return(compute.matrix.Degree(net1,net2)),
@@ -269,55 +296,55 @@ compute.matrix <- function(net1,net2 = NULL, type = "Distance", mode = "Similari
 
 #'DSD
 #'@keywords internal
-compute.matrix.DSD <- function(net,mode = "Similarity", byComp = TRUE, normalized = TRUE) {
-  path <-
-    paste(system.file(package = "AligNet"),"DSDmain.py", sep = "/")
-  n <- length(V(net))
-  prots <- V(net)$name
-  DSD <- matrix(Inf,nrow = n,ncol = n)
-  dimnames(DSD) <- list(prots,prots)
-  cc <- decompose.graph(net)
-  for (net in cc) {
-    tmp <- tempfile()
-    tmp2 <- tempfile()
-    write.table(
-      get.edgelist(net),quote = FALSE,file = tmp,row.names = FALSE,col.names = FALSE
-    )
-    command <- paste("python",path,"-m 1 -o",tmp2,tmp)
-    response <- system(command, intern = T)
-    table <- as.matrix(read.table(paste(tmp2,"DSD1",sep = ".")))
-    diam <- max(table) + 1
-    if (byComp) {
-      if (mode == "Similarity") {
-        DSD[rownames(table),colnames(table)] <- (max(table) + 1 - table) / (max(table) +
-                                                                             1)
-      }
-      else{
-        DSD[rownames(table),colnames(table)] <- table / max(table)
-      }
-    }
-    else{
-      DSD[rownames(table),colnames(table)] <- table
-    }
-  }
-  mmm <- max(DSD[DSD < Inf])
-  if (!byComp) {
-    if (mode == "Similarity") {
-      DSD <- (mmm + 1 - DSD) / (mmm + 1)
-    }
-    else{
-      if (normalized) {
-        DSD <- DSD / mmm
-      }
-    }
-  }
-  if (mode == "Similarity") {
-    DSD[DSD == Inf] <- 0
-  }
-  DSD[DSD == -Inf] <- 0
-  return(DSD)
-
-}
+#compute.matrix.DSD <- function(net,mode = "Similarity", byComp = TRUE, normalized = TRUE) {
+#   path <-
+#     paste(system.file(package = "AligNet"),"DSDmain.py", sep = "/")
+#   n <- length(V(net))
+#   prots <- V(net)$name
+#   DSD <- matrix(Inf,nrow = n,ncol = n)
+#   dimnames(DSD) <- list(prots,prots)
+#   cc <- decompose.graph(net)
+#   for (net in cc) {
+#     tmp <- tempfile()
+#     tmp2 <- tempfile()
+#     write.table(
+#       get.edgelist(net),quote = FALSE,file = tmp,row.names = FALSE,col.names = FALSE
+#     )
+#     command <- paste("python",path,"-m 1 -o",tmp2,tmp)
+#     response <- system(command, intern = T)
+#     table <- as.matrix(read.table(paste(tmp2,"DSD1",sep = ".")))
+#     diam <- max(table) + 1
+#     if (byComp) {
+#       if (mode == "Similarity") {
+#         DSD[rownames(table),colnames(table)] <- (max(table) + 1 - table) / (max(table) +
+#                                                                              1)
+#       }
+#       else{
+#         DSD[rownames(table),colnames(table)] <- table / max(table)
+#       }
+#     }
+#     else{
+#       DSD[rownames(table),colnames(table)] <- table
+#     }
+#   }
+#   mmm <- max(DSD[DSD < Inf])
+#   if (!byComp) {
+#     if (mode == "Similarity") {
+#       DSD <- (mmm + 1 - DSD) / (mmm + 1)
+#     }
+#     else{
+#       if (normalized) {
+#         DSD <- DSD / mmm
+#       }
+#     }
+#   }
+#   if (mode == "Similarity") {
+#     DSD[DSD == Inf] <- 0
+#   }
+#   DSD[DSD == -Inf] <- 0
+#   return(DSD)
+#
+#}
 
 #'Distance
 #'@keywords internal
@@ -330,7 +357,7 @@ compute.matrix.Distance <- function(net, mode = "Similarity",
     mmm <- max(dist[dist < Inf])
     if (mode == "Similarity") {
       dist <- (mmm + 1 - dist) / (mmm + 1)
-      dist[dist == - nf] <- 0
+      dist[dist == - Inf] <- 0
       return(dist)
     }
     if (normalized) {
@@ -481,8 +508,14 @@ buildBlast <- function(Net1,Net2,mode,database,database2,tmp) {
 
 #'Cluster Network
 #'
-#'Compute the cluster matrix from the similarity matrix sigma, where all the nodes have more
-#'similarity than lambda and the size of cluster is less than k.
+#'Calculate a network clusters from a similarity matrix \code{sigma}. The output is a matrix,in which
+#'the position (i, j) represents if the node i belongs to cluster j.
+#'
+#'The cluster of a node, are the nodes in the network with a similarity greather than
+#'\code{lambda}. In case
+#'Els cluster d'un node i son els nodes que tenen una similaritat amb i major que lambda.
+#'If there is more than \code{k} nodes with greater similarity than \code{lambda} the
+#'\code{k} nodes more similars to i are selected.
 #'
 #'@param sigma a similarity matrix
 #'@param lambda the similarity threshold
@@ -511,6 +544,12 @@ cluster.network <- function(sigma, lambda = 0, k = dim(sigma)[1]) {
 
 #'Extract clusters
 #'
+#'Donada una matriu que representa els clusters d'una xarxa, calcula les subxarxes que
+#'representen aquests clusters. Es a dir, donat un node i, la subxarxa que representa el
+#'cluster de i, es el subgraf de la xarxa que conte els nodes que pertanyen al cluster de i.
+#'
+#'Si no es dona cap matriu es calcula la matriu amb la funcio cluster.network i els valors
+#'lambda = 0.2 i k = 20.
 #'Compute the subnetworks of \code{Net} from a cluster matrix
 #'@param Net an igraph object
 #'@param ClustMat a cluster matrix (output of \code{cluster.matrix})
@@ -526,7 +565,8 @@ extract.clusters <- function(Net, ClustMat) {
 
 #'Display Clusters
 #'
-#'Given a cluster matrix, see \code{cluster.network} and a network
+#'Graphical representation of the network clusters.
+#'Given a cluster matrix, see \code{cluster.network}, and a network
 #'display the cluster matrix with the following colors for the position (i,j):
 #'
 #'- Yellow if the protein and protein i doesn't belongs to cluster of protein j and
@@ -541,6 +581,9 @@ extract.clusters <- function(Net, ClustMat) {
 #'-  Green if the protein and protein i belongs to cluster of protein j and
 #' proteins interact in the network
 #'
+#'This function has a \code{zoom} option, to reduce the number of squares that are drawn.
+#'In this case the user has to select one of the colors, and the color will represent the
+#'average of the values of the matrix in that square.
 #'@param clust a matrix which is the output1 of \code{cluster.network}
 #'@param cols a list of 4 colors if you want to change the default colors
 #'@param zoom an integer to define the size of plot or NA, to plot all clusters

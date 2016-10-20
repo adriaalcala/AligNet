@@ -23,6 +23,14 @@ select all columns}
 \item{int.type}{boolean to decide if must be select the interaction type in tab mode.}
 }
 \description{
-Read network from a file
+Function to read a graph from a file or a \code{date.frame}. Accepts two kinds of formats:
+- \code{tab} : A file that comes from DIP or BioGRID in tab or mitab format.
+- \code{edges}: Each row of the file or \code{data.frame} is an edge. The edges can have
+attributes.
+}
+\details{
+In \code{tab} format, you can indicate wheter you wish to preserves interaction type as
+attribute.
+In \code{edges} format, you can choose wich columns are the attributes of the edge.
 }
 
